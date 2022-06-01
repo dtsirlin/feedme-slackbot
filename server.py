@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import random
 
 from flask import Flask, request, make_response, Response
 
@@ -13,11 +14,47 @@ from slashCommand import Slash
 logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 
-@app.route("/slack/test", methods=["POST"])
-def command():
+@app.route("/slack/randomFromCSV", methods=["POST"])
+def commandList():
   if not verifier.is_valid_request(request.get_data(), request.headers):
     return make_response("invalid request", 403)
   info = request.form
+
+  inputText = info["text"].strip()
+  results = [item.strip() for item in inputText.split(",")]
+  winner = results[random.randint(0, len(results) - 1)].strip()
+
+  try:
+    response = slack_client.chat_postMessage(
+      channel='#{}'.format(info["channel_name"]), 
+      # text=commander.getMessage()
+      text=info["user_name"] + " wants to eat from one of the following places: " + ', '.join(results)
+    )#.get()
+
+    response = slack_client.chat_postMessage(
+      channel='#{}'.format(info["channel_name"]), 
+      # text=commander.getMessage()
+      text="... and the winner is: " + winner
+    )#.get()
+
+    print("\n\n")
+    print(response)
+    print("\n\n")
+  except SlackApiError as e:
+    logging.error('Request to Slack API Failed: {}.'.format(e.response.status_code))
+    logging.error(e.response)
+    return make_response("", e.response.status_code)
+
+  return make_response("", response.status_code)
+
+@app.route("/slack/test", methods=["POST"])
+def commandTest():
+  if not verifier.is_valid_request(request.get_data(), request.headers):
+    return make_response("invalid request", 403)
+  info = request.form
+  print("\n\n")
+  print(info)
+  print("\n\n")
 
   # # send user a response via DM
   # im_id = slack_client.im_open(user=info["user_id"])["channel"]["id"]
@@ -35,8 +72,12 @@ def command():
   try:
     response = slack_client.chat_postMessage(
       channel='#{}'.format(info["channel_name"]), 
-      text=commander.getMessage()
+      # text=commander.getMessage()
+      text=info["user_name"] + " wants to eat " + info["text"]
     )#.get()
+    print("\n\n")
+    print(response)
+    print("\n\n")
   except SlackApiError as e:
     logging.error('Request to Slack API Failed: {}.'.format(e.response.status_code))
     logging.error(e.response)
@@ -51,6 +92,6 @@ if __name__ == "__main__":
   slack_client = WebClient(SLACK_BOT_TOKEN)
   verifier = SignatureVerifier(SLACK_SIGNATURE)
 
-  commander = Slash("Hey there! It works.")
+  commander = Slash("Hey there! It works (with default text response).")
 
   app.run()
