@@ -5,3 +5,11 @@ Code/tutorial updated to reflect Slack API v1 -> v2 changes. [Updated tutorial i
 Used in conjunction with this [tutorial](https://medium.freecodecamp.org/how-to-build-a-basic-slackbot-a-beginners-guide-6b40507db5c5)
 
 Feel free to [tweet me @vishifishy](https://twitter.com/vishifishy) if you have any trouble, feedback, or wanna say thanks!
+
+# reqs
+pip install:
+- schedule
+- slack_sdk
+- flask
+- virtualenv
+- pandas

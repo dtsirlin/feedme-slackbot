@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import random
+import pandas as pd
 
 from flask import Flask, request, make_response, Response
 
@@ -13,6 +14,16 @@ from slashCommand import Slash
 
 logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
+
+def seed_data():
+  df = pd.read_csv (r'resources/seed.csv')
+  df.to_json (r'resources/seed_as_json.json')
+  
+  file = open("resources/seed_as_json.json", "r")
+  seed_json = file.read()
+  file.close
+  
+  return seed_json
 
 @app.route("/slack/randomFromCSV", methods=["POST"])
 def commandList():
@@ -93,5 +104,8 @@ if __name__ == "__main__":
   verifier = SignatureVerifier(SLACK_SIGNATURE)
 
   commander = Slash("Hey there! It works (with default text response).")
+
+  seed_data = seed_data()
+  print(seed_data)
 
   app.run()
