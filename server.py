@@ -11,22 +11,65 @@ from slack_sdk.errors import SlackApiError
 from slack_sdk.signature import SignatureVerifier
 
 from slashCommand import Slash
+from seedData import SeedData
 
 logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 
-def seed_data():
-  df = pd.read_csv (r'resources/seed.csv')
-  df.to_json (r'resources/seed_as_json.json')
+def getSeedData(filepath):
+  global seedDataDict
+
+  seedData = SeedData(filepath)
+  seedDataJsonString = seedData.csvToJsonString()
+  seedDataDictWithoutKeys = seedData.jsonStringToDict(seedDataJsonString)
+  seedDataDict = seedData.createDictWithKeysFromDict(seedDataDictWithoutKeys)
+
+  for value in seedDataDict.values():
+    value = seedData.cleanRecord(value)
+
+  print("Seed data has been loaded and cleaned from CSV to Dict...")
+
+@app.route("/slack/randomFromSeed", methods=["POST"])
+def commandRandomFromSeed():
+  if not verifier.is_valid_request(request.get_data(), request.headers):
+    return make_response("invalid request", 403)
+  info = request.form
+
+  chosenLocation = seedDataDict[random.randint(0, len(seedDataDict) - 1)]
+
+  try:
+    response = slack_client.chat_postMessage(
+      channel='#{}'.format(info["channel_name"]),
+      text=info["user_name"] + " is requesting a random location from the seed data. It is:\n```" + json.dumps(chosenLocation) + "```"
+    )
   
-  file = open("resources/seed_as_json.json", "r")
-  seed_json = file.read()
-  file.close
-  
-  return seed_json
+  except SlackApiError as e:
+    logging.error('Request to Slack API Failed: {}.'.format(e.response.status_code))
+    logging.error(e.response)
+    return make_response("", e.response.status_code)
+
+  return make_response("", response.status_code)
+
+@app.route("/slack/displaySeed", methods=["POST"])
+def commandDisplaySeed():
+  if not verifier.is_valid_request(request.get_data(), request.headers):
+    return make_response("invalid request", 403)
+  info = request.form
+
+  try:
+    response = slack_client.chat_postMessage(
+      channel='#{}'.format(info["channel_name"]), 
+      text=info["user_name"] + " is requesting the seed data. It is:\n```" + seedDataDict + "```"
+    )
+  except SlackApiError as e:
+    logging.error('Request to Slack API Failed: {}.'.format(e.response.status_code))
+    logging.error(e.response)
+    return make_response("", e.response.status_code)
+
+  return make_response("", response.status_code)
 
 @app.route("/slack/randomFromCSV", methods=["POST"])
-def commandList():
+def commandRandomFromCSV():
   if not verifier.is_valid_request(request.get_data(), request.headers):
     return make_response("invalid request", 403)
   info = request.form
@@ -38,18 +81,16 @@ def commandList():
   try:
     response = slack_client.chat_postMessage(
       channel='#{}'.format(info["channel_name"]), 
-      # text=commander.getMessage()
       text=info["user_name"] + " wants to eat from one of the following places: " + ', '.join(results)
-    )#.get()
+    )
 
     response = slack_client.chat_postMessage(
       channel='#{}'.format(info["channel_name"]), 
-      # text=commander.getMessage()
       text="... and the winner is: " + winner
-    )#.get()
+    )
 
-    print("\n\n")
-    print(response)
+    print("\ncommand\n")
+    print(commandRandomFromCSV)
     print("\n\n")
   except SlackApiError as e:
     logging.error('Request to Slack API Failed: {}.'.format(e.response.status_code))
@@ -86,9 +127,6 @@ def commandTest():
       # text=commander.getMessage()
       text=info["user_name"] + " wants to eat " + info["text"]
     )#.get()
-    print("\n\n")
-    print(response)
-    print("\n\n")
   except SlackApiError as e:
     logging.error('Request to Slack API Failed: {}.'.format(e.response.status_code))
     logging.error(e.response)
@@ -103,9 +141,6 @@ if __name__ == "__main__":
   slack_client = WebClient(SLACK_BOT_TOKEN)
   verifier = SignatureVerifier(SLACK_SIGNATURE)
 
-  commander = Slash("Hey there! It works (with default text response).")
-
-  seed_data = seed_data()
-  print(seed_data)
+  getSeedData("resources/seed.csv")
 
   app.run()

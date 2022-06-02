@@ -2,7 +2,9 @@
 class Slash():
 
   def __init__(self, message):
+    print("\nin Slash init\n")
     self.msg = message
 
   def getMessage(self):
-      return self.msg
+    print("\nin slashCommand.getMessage\n")
+    return self.msg
