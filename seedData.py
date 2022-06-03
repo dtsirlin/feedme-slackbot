@@ -28,31 +28,23 @@ class SeedData():
         dictWithKeys = dict()
         id = 0
 
-        # print(dictWithoutKeys)
-        # print(dictWithKeys)
-
         for key in dictWithoutKeys:
-            # print(id)
-            # print(key)
             dictWithKeys[id] = key
             id += 1
-        
-        # print("\n")
-        # print(dictWithKeys)
-        # print("\n")
 
         return dictWithKeys
 
 
-    def cleanRecord(self, record):
-        record['name'] = record['name'].replace('"','').strip()
-        record['address'] = record['address'].replace('"','').strip()
-        record['menuLink'] = record['menuLink'].replace('"','').strip().lower()
-        record['instagram'] = record['instagram'].replace('"','').strip().lower()
-        record['contactEmail'] = record['contactEmail'].replace('"','').strip().lower()
-        record['contactNumber'] = record['contactNumber'].replace('"','').strip().lower()
-        record['category'] = record['category'].replace('"','').strip().lower()
+    def formatValues(self, dict):
+        for value in dict.values():
+            value['name'] = value['name'].replace('"','').strip()
+            value['address'] = value['address'].replace('"','').strip()
+            value['menuLink'] = value['menuLink'].replace('"','').strip().lower()
+            value['instagram'] = value['instagram'].replace('"','').strip().lower()
+            value['contactEmail'] = value['contactEmail'].replace('"','').strip().lower()
+            value['contactNumber'] = value['contactNumber'].replace('"','').strip().lower()
+            value['category'] = value['category'].replace('"','').strip().lower()
 
-        return record
+        return dict
 
         

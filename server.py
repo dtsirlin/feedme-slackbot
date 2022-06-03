@@ -23,9 +23,7 @@ def getSeedData(filepath):
   seedDataJsonString = seedData.csvToJsonString()
   seedDataDictWithoutKeys = seedData.jsonStringToDict(seedDataJsonString)
   seedDataDict = seedData.createDictWithKeysFromDict(seedDataDictWithoutKeys)
-
-  for value in seedDataDict.values():
-    value = seedData.cleanRecord(value)
+  seedDataDict = seedData.formatValues(seedDataDict)
 
   print("Seed data has been loaded and cleaned from CSV to Dict...")
 
@@ -59,39 +57,8 @@ def commandDisplaySeed():
   try:
     response = slack_client.chat_postMessage(
       channel='#{}'.format(info["channel_name"]), 
-      text=info["user_name"] + " is requesting the seed data. It is:\n```" + seedDataDict + "```"
+      text=info["user_name"] + " is requesting the seed data. It is:\n```" + str(seedDataDict) + "```"
     )
-  except SlackApiError as e:
-    logging.error('Request to Slack API Failed: {}.'.format(e.response.status_code))
-    logging.error(e.response)
-    return make_response("", e.response.status_code)
-
-  return make_response("", response.status_code)
-
-@app.route("/slack/randomFromCSV", methods=["POST"])
-def commandRandomFromCSV():
-  if not verifier.is_valid_request(request.get_data(), request.headers):
-    return make_response("invalid request", 403)
-  info = request.form
-
-  inputText = info["text"].strip()
-  results = [item.strip() for item in inputText.split(",")]
-  winner = results[random.randint(0, len(results) - 1)].strip()
-
-  try:
-    response = slack_client.chat_postMessage(
-      channel='#{}'.format(info["channel_name"]), 
-      text=info["user_name"] + " wants to eat from one of the following places: " + ', '.join(results)
-    )
-
-    response = slack_client.chat_postMessage(
-      channel='#{}'.format(info["channel_name"]), 
-      text="... and the winner is: " + winner
-    )
-
-    print("\ncommand\n")
-    print(commandRandomFromCSV)
-    print("\n\n")
   except SlackApiError as e:
     logging.error('Request to Slack API Failed: {}.'.format(e.response.status_code))
     logging.error(e.response)
@@ -104,29 +71,12 @@ def commandTest():
   if not verifier.is_valid_request(request.get_data(), request.headers):
     return make_response("invalid request", 403)
   info = request.form
-  print("\n\n")
-  print(info)
-  print("\n\n")
-
-  # # send user a response via DM
-  # im_id = slack_client.im_open(user=info["user_id"])["channel"]["id"]
-  # ownerMsg = slack_client.chat_postMessage(
-  #   channel=im_id,
-  #   text=commander.getMessage()
-  # )
-
-  # # send channel a response
-  # response = slack_client.chat_postMessage(
-  #   channel='#{}'.format(info["channel_name"]), 
-  #   text=commander.getMessage()
-  # )
 
   try:
     response = slack_client.chat_postMessage(
       channel='#{}'.format(info["channel_name"]), 
-      # text=commander.getMessage()
       text=info["user_name"] + " wants to eat " + info["text"]
-    )#.get()
+    )
   except SlackApiError as e:
     logging.error('Request to Slack API Failed: {}.'.format(e.response.status_code))
     logging.error(e.response)
